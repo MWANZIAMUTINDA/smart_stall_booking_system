@@ -6,13 +6,11 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'Smart Stall Booking') }}</title>
 
-    <!-- Fonts: Switched to a more stable format to avoid CORB -->
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net" rel="stylesheet" />
 
-    <!-- 1. FIXED APEXCHARTS CDN (Cloudflare is more reliable for CORB) -->
-    <script src="https://cdnjs.cloudflare.com" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-
+    <!-- Scripts & Styles -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
@@ -20,7 +18,7 @@
 
 <div class="flex min-h-screen">
 
-    <!-- Modern Sidebar -->
+    <!-- Sidebar -->
     <aside class="w-64 bg-gradient-to-b from-blue-900 to-indigo-950 text-white hidden md:flex flex-col shadow-2xl">
         <div class="p-8 pb-4">
             <h1 class="text-xl font-extrabold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-300 uppercase leading-none">
@@ -39,6 +37,7 @@
                 @if(auth()->user()->role === 'admin')
                     <a href="{{ route('admin.dashboard') }}" class="{{ $linkStyle }} {{ request()->routeIs('admin.dashboard') ? $activeStyle : 'text-blue-100/70' }}">Dashboard</a>
                     <a href="{{ route('admin.stalls.index') }}" class="{{ $linkStyle }} {{ request()->routeIs('admin.stalls.*') ? $activeStyle : 'text-blue-100/70' }}">Manage Stalls</a>
+                    <a href="{{ route('admin.feedback.index') }}" class="{{ $linkStyle }} {{ request()->routeIs('admin.feedback.*') ? $activeStyle : 'text-blue-100/70' }}">Feedback</a>
                 @endif
 
                 @if(auth()->user()->role === 'trader')
@@ -59,10 +58,14 @@
         </div>
     </aside>
 
-    <!-- Main Content Area -->
+    <!-- Main Content -->
     <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- Header -->
         <header class="bg-white/80 backdrop-blur-md sticky top-0 z-30 px-8 py-4 flex justify-between items-center border-b border-slate-200">
-            <h2 class="text-lg font-bold text-slate-800 tracking-tight">@yield('page-title', 'Overview')</h2>
+            <h2 class="text-lg font-bold text-slate-800 tracking-tight">
+                @yield('page-title', 'Overview')
+            </h2>
+
             <div class="flex items-center gap-4">
                 <div class="h-10 w-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold shadow-lg">
                     {{ substr(auth()->user()->name, 0, 1) }}
@@ -70,6 +73,7 @@
             </div>
         </header>
 
+        <!-- Page Content -->
         <main class="p-8 flex-1 overflow-y-auto bg-slate-50/50">
             <div class="max-w-7xl mx-auto">
                 @yield('content')

@@ -85,6 +85,10 @@ Route::middleware(['auth'])
 
         Route::get('/bookings/{booking}/renew', [BookingController::class, 'renew'])
             ->name('bookings.renew');
+
+        // ✅ Trader Feedback Submission
+        Route::post('/feedback', [DashboardController::class, 'storeFeedback'])
+            ->name('feedback.store');
     });
 
 /*
@@ -101,7 +105,7 @@ Route::middleware(['auth', 'admin'])
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])
             ->name('dashboard');
 
-        // 2. ✅ Admin Manual Assignment Routes (Moved ABOVE resource)
+        // 2. Admin Manual Assignment Routes
         Route::get('/stalls/assign', [AdminDashboardController::class, 'createAssignment'])
             ->name('stalls.assign.create');
 
@@ -125,6 +129,13 @@ Route::middleware(['auth', 'admin'])
         Route::get('/traders/{user}/history',
             [AdminDashboardController::class, 'traderHistory'])
             ->name('traders.history');
+
+        // ✅ Admin Feedback Management
+        Route::get('/feedback', [AdminDashboardController::class, 'feedbackIndex'])
+            ->name('feedback.index');
+
+        Route::patch('/feedback/{id}/resolve', [AdminDashboardController::class, 'resolveFeedback'])
+            ->name('feedback.resolve');
     });
 
 /*

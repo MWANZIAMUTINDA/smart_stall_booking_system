@@ -21,7 +21,6 @@
         </div>
     @endif
 
-
     @if($stalls->isNotEmpty())
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -89,6 +88,71 @@
 
     @endif
 
+
+    <!-- ========================= -->
+    <!-- 📩 FEEDBACK SECTION -->
+    <!-- ========================= -->
+    <div class="bg-white p-6 rounded-2xl shadow-md mt-10 border border-slate-100">
+        <h3 class="text-lg font-semibold mb-4 text-gray-700">
+            Send Feedback to Admin
+        </h3>
+
+        @if ($errors->any())
+            <div class="mb-4 text-red-600 text-sm font-medium">
+                {{ $errors->first('message') }}
+            </div>
+        @endif
+
+        <form action="{{ route('trader.feedback.store') }}" method="POST">
+            @csrf
+
+            <div class="mb-3">
+                <textarea 
+                    name="message" 
+                    id="feedbackMessage" 
+                    maxlength="160" 
+                    rows="3" 
+                    class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="How can we improve? (Max 160 characters)"
+                    required>{{ old('message') }}</textarea>
+                
+                <div class="text-right text-xs text-gray-500 mt-1">
+                    <span id="charCount">0</span> / 160 characters
+                </div>
+            </div>
+
+            <button type="submit" 
+                class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium">
+                Send Feedback
+            </button>
+        </form>
+    </div>
+
 </div>
 
 @endsection
+
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const textarea = document.getElementById('feedbackMessage');
+    const charCount = document.getElementById('charCount');
+
+    if (textarea) {
+        charCount.textContent = textarea.value.length;
+
+        textarea.addEventListener('input', function() {
+            const length = this.value.length;
+            charCount.textContent = length;
+            
+            if (length >= 150) {
+                charCount.classList.add('text-red-500');
+            } else {
+                charCount.classList.remove('text-red-500');
+            }
+        });
+    }
+});
+</script>
+@endpush

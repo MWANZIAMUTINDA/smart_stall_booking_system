@@ -12,21 +12,22 @@
             <p class="text-blue-200/70 text-xs uppercase font-bold mt-1 tracking-widest">Official Analytics Report</p>
         </div>
 
-        <!-- Wrapper for buttons -->
         <div class="flex items-center gap-3">
-            
-            <!-- View All Booked Stalls Button -->
             <a href="{{ route('admin.stalls.booked') }}" 
                class="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg hover:bg-indigo-700 transition-all">
                 🏢 View All Booked Stalls
             </a>
 
-            <!-- Print Button -->
-            <button onclick="window.print()" class="flex items-center gap-2 bg-white text-blue-900 px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg hover:scale-105 active:scale-95 transition-all">
-                <span>🖨️</span> Export as PDF / Print
+            <a href="{{ route('admin.feedback.index') }}" 
+               class="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg hover:bg-blue-700 transition-all">
+                💬 View Trader Feedback
+            </a>
+
+            <button onclick="window.print()" 
+               class="flex items-center gap-2 bg-white text-blue-900 px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg hover:scale-105 active:scale-95 transition-all">
+                🖨️ Export as PDF / Print
             </button>
 
-            <!-- ✅ New Manual Assignment Button -->
             <a href="{{ route('admin.stalls.assign.create') }}" 
                class="bg-indigo-600 text-white px-6 py-3 rounded-xl font-black text-xs uppercase shadow-lg hover:bg-indigo-700 transition-all">
                 ➕ New Manual Assignment
@@ -129,30 +130,16 @@
                             </td>
 
                             <td class="px-6 py-4 text-right">
-                                <form action="{{ route('admin.traders.restrict', $trader->id) }}" 
-                                      method="POST" 
-                                      class="inline-flex gap-1">
+                                <form action="{{ route('admin.traders.restrict', $trader->id) }}" method="POST" class="inline-flex gap-1">
                                     @csrf
                                     @method('PATCH')
 
-                                    <input type="text" 
-                                           name="reason" 
-                                           placeholder="Reason..." 
-                                           required 
-                                           class="text-[10px] border-slate-200 rounded-lg px-2 py-1 focus:ring-blue-500 w-32">
+                                    <input type="text" name="reason" placeholder="Reason..." required class="text-[10px] border-slate-200 rounded-lg px-2 py-1 focus:ring-blue-500 w-32">
 
-                                    <button name="action" value="warned"
-                                        class="p-1.5 bg-amber-100 text-amber-600 rounded-lg hover:bg-amber-200 transition-colors">📢</button>
-
-                                    <button name="action" value="blocked"
-                                        class="p-1.5 bg-orange-100 text-orange-600 rounded-lg hover:bg-orange-200 transition-colors">🚫</button>
-
-                                    <button name="action" value="banned"
-                                        class="p-1.5 bg-rose-100 text-rose-600 rounded-lg hover:bg-rose-200 transition-colors"
-                                        onclick="return confirm('Ban this trader permanently?')">🔨</button>
-
-                                    <button name="action" value="none"
-                                        class="p-1.5 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors">✅</button>
+                                    <button name="action" value="warned" class="p-1.5 bg-amber-100 text-amber-600 rounded-lg hover:bg-amber-200 transition-colors">📢</button>
+                                    <button name="action" value="blocked" class="p-1.5 bg-orange-100 text-orange-600 rounded-lg hover:bg-orange-200 transition-colors">🚫</button>
+                                    <button name="action" value="banned" class="p-1.5 bg-rose-100 text-rose-600 rounded-lg hover:bg-rose-200 transition-colors" onclick="return confirm('Ban this trader permanently?')">🔨</button>
+                                    <button name="action" value="none" class="p-1.5 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors">✅</button>
                                 </form>
                             </td>
                         </tr>
@@ -166,29 +153,31 @@
 
 @push('scripts')
 <script>
-    (function initCharts() {
-        if (typeof window.ApexCharts === 'undefined') {
-            setTimeout(initCharts, 100);
-            return;
-        }
+(function initCharts() {
+    if (typeof window.ApexCharts === 'undefined') {
+        setTimeout(initCharts, 100);
+        return;
+    }
 
-        new ApexCharts(document.querySelector("#revenueChart"), {
-            series: [{ name: 'Revenue', data: {!! json_encode($revenueTrend->pluck('daily_total')) !!} }],
-            chart: { height: 300, type: 'area', toolbar: { show: false }, fontFamily: 'Figtree' },
-            colors: ['#2563eb'],
-            stroke: { curve: 'smooth', width: 3 },
-            xaxis: { categories: {!! json_encode($revenueTrend->pluck('date')) !!} },
-            fill: { type: 'gradient', gradient: { opacityFrom: 0.4, opacityTo: 0 } }
-        }).render();
+    // 30-Day Revenue Trend
+    new ApexCharts(document.querySelector("#revenueChart"), {
+        series: [{ name: 'Revenue', data: {!! json_encode($revenueTrend->pluck('daily_total')) !!} }],
+        chart: { height: 300, type: 'area', toolbar: { show: false }, fontFamily: 'Figtree' },
+        colors: ['#2563eb'],
+        stroke: { curve: 'smooth', width: 3 },
+        xaxis: { categories: {!! json_encode($revenueTrend->pluck('date')) !!} },
+        fill: { type: 'gradient', gradient: { opacityFrom: 0.4, opacityTo: 0 } }
+    }).render();
 
-        new ApexCharts(document.querySelector("#zoneChart"), {
-            series: {!! json_encode($zoneStats->pluck('revenue')->map(fn($r) => (float)$r)) !!},
-            chart: { height: 300, type: 'donut', fontFamily: 'Figtree' },
-            labels: {!! json_encode($zoneStats->pluck('zone')) !!},
-            colors: ['#2563eb', '#8b5cf6', '#f59e0b', '#10b981'],
-            plotOptions: { pie: { donut: { size: '70%', labels: { show: true, total: { show: true, label: 'TOTAL' } } } } }
-        }).render();
-    })();
+    // Revenue by Zone
+    new ApexCharts(document.querySelector("#zoneChart"), {
+        series: {!! json_encode($zoneStats->pluck('revenue')->map(fn($r) => (float)$r)) !!},
+        chart: { height: 300, type: 'donut', fontFamily: 'Figtree' },
+        labels: {!! json_encode($zoneStats->pluck('zone')) !!},
+        colors: ['#2563eb', '#8b5cf6', '#f59e0b', '#10b981'],
+        plotOptions: { pie: { donut: { size: '70%', labels: { show: true, total: { show: true, label: 'TOTAL' } } } } }
+    }).render();
+})();
 </script>
 @endpush
 @endsection

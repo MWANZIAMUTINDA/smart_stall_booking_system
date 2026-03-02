@@ -6,12 +6,16 @@ use App\Http\Controllers\Controller;
 use App\Models\Stall;
 use App\Models\Booking;
 use App\Models\User;
+use App\Models\Feedback; // ✅ Added for feedback management
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
+    /**
+     * Show the main admin dashboard
+     */
     public function index()
     {
         // --- Existing Stats ---
@@ -142,7 +146,7 @@ class DashboardController extends Controller
             return back()->with('error', 'This stall is already occupied.');
         }
 
-        // Create the booking for the TRADER, including booking_date
+        // Create the booking for the TRADER
         Booking::create([
             'stall_id'     => $stall->id,
             'user_id'      => $trader->id,
@@ -159,5 +163,31 @@ class DashboardController extends Controller
             'success',
             "Stall #{$stall->stall_number} successfully assigned to {$trader->name}."
         );
+    }
+
+    // ===============================
+    // ✅ FEEDBACK MANAGEMENT METHODS
+    // ===============================
+
+    /**
+     * Show all trader feedback for Admin
+     */
+    public function feedbackIndex()
+    {
+        // Fetch all feedback with user info, latest first
+        $feedbacks = Feedback::with('user')->latest()->get();
+
+        return view('admin.feedback.index', compact('feedbacks'));
+    }
+
+    /**
+     * Mark a feedback as resolved
+     */
+    public function resolveFeedback($id)
+    {
+        $feedback = Feedback::findOrFail($id);
+        $feedback->update(['status' => 'resolved']);
+
+        return back()->with('success', 'Feedback marked as resolved.');
     }
 }
