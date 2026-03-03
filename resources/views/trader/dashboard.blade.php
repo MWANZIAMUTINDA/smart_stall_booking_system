@@ -40,7 +40,6 @@
                     </p>
                 @elseif(auth()->user()->hasWarning())
                     <p class="text-[10px] font-bold text-amber-600 mt-2 uppercase">
-                        Warning: Please comply with market regulations
                     </p>
                 @endif
             </div>

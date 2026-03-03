@@ -8,6 +8,7 @@ use App\Http\Controllers\Trader\StallController as TraderStallController;
 use App\Http\Controllers\Trader\DashboardController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Officer\DashboardController as OfficerDashboard;
+use App\Http\Controllers\Officer\ViolationController; // ✅ IMPORTANT
 
 /*
 |--------------------------------------------------------------------------
@@ -41,10 +42,11 @@ Route::get('/account/restricted', function () {
 
 /*
 |--------------------------------------------------------------------------
-| Profile Routes (Auth Only)
+| Profile Routes
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth'])->group(function () {
+
     Route::get('/profile', [ProfileController::class, 'edit'])
         ->name('profile.edit');
 
@@ -86,7 +88,6 @@ Route::middleware(['auth'])
         Route::get('/bookings/{booking}/renew', [BookingController::class, 'renew'])
             ->name('bookings.renew');
 
-        // ✅ Trader Feedback Submission
         Route::post('/feedback', [DashboardController::class, 'storeFeedback'])
             ->name('feedback.store');
     });
@@ -101,54 +102,56 @@ Route::middleware(['auth', 'admin'])
     ->name('admin.')
     ->group(function () {
 
-        // 1. Dashboard
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])
             ->name('dashboard');
 
-        // 2. Admin Manual Assignment Routes
         Route::get('/stalls/assign', [AdminDashboardController::class, 'createAssignment'])
             ->name('stalls.assign.create');
 
         Route::post('/stalls/assign', [AdminDashboardController::class, 'assignStall'])
             ->name('stalls.assign.store');
 
-        // 3. Stall Resource Route
         Route::resource('stalls', StallController::class);
 
-        // Restrict / Warn / Block / Ban Trader
         Route::patch('/traders/{user}/restrict',
             [AdminDashboardController::class, 'updateRestriction'])
             ->name('traders.restrict');
 
-        // View All Currently Booked Stalls
         Route::get('/booked-stalls',
             [AdminDashboardController::class, 'bookedStalls'])
             ->name('stalls.booked');
 
-        // View Specific Trader Booking History
         Route::get('/traders/{user}/history',
             [AdminDashboardController::class, 'traderHistory'])
             ->name('traders.history');
 
-        // ✅ Admin Feedback Management
         Route::get('/feedback', [AdminDashboardController::class, 'feedbackIndex'])
             ->name('feedback.index');
 
-        Route::patch('/feedback/{id}/resolve', [AdminDashboardController::class, 'resolveFeedback'])
+        Route::patch('/feedback/{id}/resolve',
+            [AdminDashboardController::class, 'resolveFeedback'])
             ->name('feedback.resolve');
     });
 
 /*
 |--------------------------------------------------------------------------
-| Officer Routes
+| Officer Routes (FIXED)
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'officer'])
     ->prefix('officer')
     ->name('officer.')
     ->group(function () {
+
         Route::get('/dashboard', [OfficerDashboard::class, 'index'])
             ->name('dashboard');
+
+        // ✅ Custom preview route
+        Route::get('violations/{id}/preview', [ViolationController::class, 'preview'])
+            ->name('violations.preview');
+
+        // ✅ Full resource routes (index, create, store, show, edit, update, destroy)
+        Route::resource('violations', ViolationController::class);
     });
 
 /*
