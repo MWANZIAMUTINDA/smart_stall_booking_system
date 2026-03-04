@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder; // Add this
 use App\Models\Stall;
 use App\Models\User;
 
@@ -11,9 +12,6 @@ class Booking extends Model
 {
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     */
     protected $fillable = [
         'user_id',
         'stall_id',
@@ -23,10 +21,6 @@ class Booking extends Model
         'status',
     ];
 
-    /**
-     * 1. DATE CASTING (Crucial for Auto-Vacate & Renew Logic)
-     * This converts the database strings into Carbon instances automatically.
-     */
     protected $casts = [
         'start_time' => 'datetime',
         'end_time' => 'datetime',
@@ -34,16 +28,31 @@ class Booking extends Model
     ];
 
     /**
-     * A booking belongs to a stall.
+     * SCOPE: Only get bookings that are currently active (within time)
+     * Usage: Booking::currentOccupants()->get();
      */
+    public function scopeCurrentOccupants(Builder $query)
+    {
+        return $query->where('status', 'confirmed')
+                     ->where('start_time', '<=', now())
+                     ->where('end_time', '>=', now());
+    }
+
+    /**
+     * SCOPE: Get bookings that have officially expired but are still marked 'confirmed'
+     * Usage: Booking::expiredButStillConfirmed()->get();
+     */
+    public function scopeExpiredButStillConfirmed(Builder $query)
+    {
+        return $query->where('status', 'confirmed')
+                     ->where('end_time', '<', now());
+    }
+
     public function stall()
     {
         return $this->belongsTo(Stall::class);
     }
 
-    /**
-     * A booking belongs to a user.
-     */
     public function user()
     {
         return $this->belongsTo(User::class);

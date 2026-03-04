@@ -7,8 +7,8 @@ use App\Http\Controllers\Trader\BookingController;
 use App\Http\Controllers\Trader\StallController as TraderStallController;
 use App\Http\Controllers\Trader\DashboardController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
-use App\Http\Controllers\Officer\DashboardController as OfficerDashboard;
-use App\Http\Controllers\Officer\ViolationController; // ✅ IMPORTANT
+use App\Http\Controllers\Officer\DashboardController as OfficerDashboardController;
+use App\Http\Controllers\Officer\ViolationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,14 +17,18 @@ use App\Http\Controllers\Officer\ViolationController; // ✅ IMPORTANT
 */
 Route::get('/', function () {
     if (auth()->check()) {
+
         if (auth()->user()->role === 'admin') {
             return redirect()->route('admin.dashboard');
         }
+
         if (auth()->user()->role === 'officer') {
             return redirect()->route('officer.dashboard');
         }
+
         return redirect()->route('trader.dashboard');
     }
+
     return view('welcome');
 });
 
@@ -34,18 +38,21 @@ Route::get('/', function () {
 |--------------------------------------------------------------------------
 */
 Route::get('/account/restricted', function () {
+
     if (!auth()->check() || auth()->user()->account_restriction === 'none') {
         return redirect('/');
     }
+
     return view('errors.restricted');
-})->name('account.restricted')->middleware('auth');
+
+})->middleware('auth')->name('account.restricted');
 
 /*
 |--------------------------------------------------------------------------
 | Profile Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth'])->group(function () {
+Route::middleware('auth')->group(function () {
 
     Route::get('/profile', [ProfileController::class, 'edit'])
         ->name('profile.edit');
@@ -62,7 +69,7 @@ Route::middleware(['auth'])->group(function () {
 | Trader Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth'])
+Route::middleware('auth')
     ->prefix('trader')
     ->name('trader.')
     ->group(function () {
@@ -113,45 +120,61 @@ Route::middleware(['auth', 'admin'])
 
         Route::resource('stalls', StallController::class);
 
-        Route::patch('/traders/{user}/restrict',
-            [AdminDashboardController::class, 'updateRestriction'])
+        Route::patch('/traders/{user}/restrict', [AdminDashboardController::class, 'updateRestriction'])
             ->name('traders.restrict');
 
-        Route::get('/booked-stalls',
-            [AdminDashboardController::class, 'bookedStalls'])
+        Route::get('/booked-stalls', [AdminDashboardController::class, 'bookedStalls'])
             ->name('stalls.booked');
 
-        Route::get('/traders/{user}/history',
-            [AdminDashboardController::class, 'traderHistory'])
+        Route::get('/traders/{user}/history', [AdminDashboardController::class, 'traderHistory'])
             ->name('traders.history');
 
         Route::get('/feedback', [AdminDashboardController::class, 'feedbackIndex'])
             ->name('feedback.index');
 
-        Route::patch('/feedback/{id}/resolve',
-            [AdminDashboardController::class, 'resolveFeedback'])
+        Route::patch('/feedback/{id}/resolve', [AdminDashboardController::class, 'resolveFeedback'])
             ->name('feedback.resolve');
     });
 
 /*
 |--------------------------------------------------------------------------
-| Officer Routes (FIXED)
+| Officer Dashboard (Professional Clean Route)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'officer'])
+Route::get('/officer/dashboard',
+    [OfficerDashboardController::class, 'index']
+)->middleware(['auth','officer'])
+ ->name('officer.dashboard');
+
+/*
+|--------------------------------------------------------------------------
+| Officer Violation Routes
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth','officer'])
     ->prefix('officer')
     ->name('officer.')
     ->group(function () {
 
-        Route::get('/dashboard', [OfficerDashboard::class, 'index'])
-            ->name('dashboard');
+        Route::get('/violations',
+            [ViolationController::class, 'index']
+        )->name('violations.index');
 
-        // ✅ Custom preview route
-        Route::get('violations/{id}/preview', [ViolationController::class, 'preview'])
-            ->name('violations.preview');
+        Route::get('/violations/create',
+            [ViolationController::class, 'create']
+        )->name('violations.create');
 
-        // ✅ Full resource routes (index, create, store, show, edit, update, destroy)
-        Route::resource('violations', ViolationController::class);
+        Route::post('/violations',
+            [ViolationController::class, 'store']
+        )->name('violations.store');
+
+        Route::get('/violations/{id}/preview',
+            [ViolationController::class, 'preview']
+        )->name('violations.preview');
+
+        Route::post('/violations/{id}/approve',
+            [ViolationController::class, 'approve']
+        )->name('violations.approve');
     });
 
 /*
@@ -159,4 +182,4 @@ Route::middleware(['auth', 'officer'])
 | Auth Routes
 |--------------------------------------------------------------------------
 */
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

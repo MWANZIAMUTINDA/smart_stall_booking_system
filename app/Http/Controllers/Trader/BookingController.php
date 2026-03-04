@@ -21,43 +21,57 @@ class BookingController extends Controller
         return view('trader.bookings.create', compact('stall'));
     }
 
-    // Store booking
+    // =====================================================
+    // ✅ UPDATED STORE METHOD (With Safety Cleanup)
+    // =====================================================
     public function store(Request $request)
     {
         $request->validate([
-            'stall_id' => 'required|exists:stalls,id',
+            'stall_id'     => 'required|exists:stalls,id',
             'booking_date' => 'required|date',
-            'start_time' => 'required',
-            'end_time' => 'required',
+            'start_time'   => 'required',
+            'end_time'     => 'required',
         ]);
 
+        // 1️⃣ SAFETY CLEANUP:
+        // If previous confirmed booking expired, release stall
+        $expiredBooking = Booking::where('stall_id', $request->stall_id)
+            ->where('status', 'confirmed')
+            ->where('end_time', '<', now())
+            ->first();
+
+        if ($expiredBooking) {
+            $expiredBooking->update(['status' => 'expired']);
+            Stall::where('id', $request->stall_id)
+                ->update(['status' => 'available']);
+        }
+
+        // 2️⃣ Check availability AFTER cleanup
         $stall = Stall::where('id', $request->stall_id)
                       ->where('status', 'available')
                       ->first();
 
         if (!$stall) {
             return redirect()->back()
-                ->with('error', 'This stall is no longer available.');
+                ->with('error', 'This stall is currently occupied by another trader.');
         }
 
         $user = auth()->user();
 
-        // Create booking
+        // 3️⃣ Create booking
         $booking = Booking::create([
-            'user_id' => $user->id,
-            'stall_id' => $stall->id,
+            'user_id'      => $user->id,
+            'stall_id'     => $stall->id,
             'booking_date' => $request->booking_date,
-            'start_time' => $request->start_time,
-            'end_time' => $request->end_time,
-            'status' => 'confirmed'
+            'start_time'   => $request->start_time,
+            'end_time'     => $request->end_time,
+            'status'       => 'confirmed'
         ]);
 
-        // Mark stall as booked
-        $stall->update([
-            'status' => 'booked'
-        ]);
+        // 4️⃣ Mark stall as booked
+        $stall->update(['status' => 'booked']);
 
-        // Send SMS Notification
+        // 5️⃣ SMS Notification
         $sms = new SmsService();
         $message = "Your stall {$stall->stall_number} has been successfully booked.";
         $sms->send($user->phone_number, $message);
@@ -77,35 +91,49 @@ class BookingController extends Controller
         return view('trader.bookings.index', compact('bookings'));
     }
 
-    /**
-     * 🔄 Renew / Extend Booking
-     */
+    // =====================================================
+    // 🔄 UPDATED RENEW METHOD (Smart & Safe Renewal)
+    // =====================================================
     public function renew($id)
     {
         $booking = Booking::where('id', $id)
                           ->where('user_id', auth()->id())
                           ->firstOrFail();
 
-        // Check if the stall is still associated with this booking
-        if (!$booking->stall) {
-            return redirect()->back()->with('error', 'Stall information missing.');
+        // 1️⃣ Prevent renewal if stall already taken
+        $isStallTaken = Booking::where('stall_id', $booking->stall_id)
+            ->where('id', '!=', $id)
+            ->where('status', 'confirmed')
+            ->where('end_time', '>', now())
+            ->exists();
+
+        if ($isStallTaken) {
+            return redirect()->back()
+                ->with('error', 'Too late! This stall has already been booked by someone else.');
         }
 
-        // Extend the end_time by 24 hours
-        // Note: Carbon handles the math automatically because we casted the date in the Model
-        $newEndTime = $booking->end_time->addHours(24);
+        // 2️⃣ Smart Time Extension
+        // If expired → extend from NOW
+        // If still active → extend from existing end_time
+        $baseTime = $booking->end_time->isPast()
+            ? now()
+            : $booking->end_time;
+
+        $newEndTime = $baseTime->copy()->addHours(24);
 
         $booking->update([
             'end_time' => $newEndTime,
-            'status' => 'confirmed' // Ensure it's active
+            'status'   => 'confirmed'
         ]);
 
-        // Ensure the stall status is 'booked' (not 'available')
+        // Ensure stall remains booked
         $booking->stall->update(['status' => 'booked']);
 
-        // Optional: Send Renewal SMS
+        // 3️⃣ SMS Renewal Notification
         $sms = new SmsService();
-        $message = "Your booking for stall {$booking->stall->stall_number} has been extended to " . $newEndTime->format('d M, H:i') . ".";
+        $message = "Your booking for stall {$booking->stall->stall_number} has been extended to "
+                 . $newEndTime->format('d M, H:i') . ".";
+
         $sms->send(auth()->user()->phone_number, $message);
 
         return redirect()->back()
@@ -125,14 +153,10 @@ class BookingController extends Controller
         }
 
         // Update booking status
-        $booking->update([
-            'status' => 'cancelled'
-        ]);
+        $booking->update(['status' => 'cancelled']);
 
-        // Make stall available again
-        $booking->stall->update([
-            'status' => 'available'
-        ]);
+        // Release stall
+        $booking->stall->update(['status' => 'available']);
 
         return redirect()->back()
             ->with('success', 'Booking cancelled successfully.');

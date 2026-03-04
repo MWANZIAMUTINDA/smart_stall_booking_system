@@ -13,14 +13,24 @@
         </div>
         <div class="bg-white/10 px-4 py-2 rounded-xl border border-white/10">
             <span class="text-white font-bold text-lg tabular-nums">{{ count($bookings) }}</span>
-            <span class="text-blue-300 text-[10px] uppercase font-black ml-1">Total Stalls</span>
+            <span class="text-blue-300 text-[10px] uppercase font-black ml-1">Active Stalls</span>
         </div>
+    </div>
+
+    <!-- Officer Dashboard Action Buttons -->
+    <div class="grid md:grid-cols-2 gap-4">
+        <a href="{{ route('officer.violations.create') }}"
+           class="bg-blue-600 hover:bg-blue-700 transition text-white font-black py-4 rounded-2xl text-center shadow-md uppercase text-xs tracking-widest">
+            ⚠️ Generate Violation Letter
+        </a>
+        <a href="{{ route('officer.violations.index') }}"
+           class="bg-emerald-600 hover:bg-emerald-700 transition text-white font-black py-4 rounded-2xl text-center shadow-md uppercase text-xs tracking-widest">
+            📜 View Past Violations
+        </a>
     </div>
 
     <!-- Main Table Card -->
     <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-        
-        <!-- Scrollable Container with Fixed Height -->
         <div class="max-h-[550px] overflow-y-auto">
             <table class="w-full text-left border-collapse">
                 <thead class="sticky top-0 z-20 bg-slate-50/95 backdrop-blur-sm shadow-sm">
@@ -28,8 +38,9 @@
                         <th class="px-6 py-4">Stall ID</th>
                         <th class="px-6 py-4">Zone</th>
                         <th class="px-6 py-4">Trader Name</th>
-                        <th class="px-6 py-4">Contact Details</th>
-                        <th class="px-6 py-4 text-right">Verification Date</th>
+                        <th class="px-6 py-4">Contact</th>
+                        <!-- CHANGED: Focus on Expiry for enforcement -->
+                        <th class="px-6 py-4 text-right">Time Remaining</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-50 text-sm">
@@ -52,15 +63,25 @@
                             <p class="text-slate-600 font-medium">{{ $booking->user->phone_number }}</p>
                         </td>
                         <td class="px-6 py-4 text-right">
-                            <p class="text-slate-400 font-medium text-xs">{{ $booking->created_at->format('d M Y') }}</p>
+                            <!-- Show dynamic countdown for the Officer -->
+                            @if($booking->end_time->isPast())
+                                <span class="text-rose-600 font-black text-[10px] uppercase">Expired</span>
+                            @else
+                                <p class="text-emerald-600 font-black text-xs uppercase tabular-nums">
+                                    {{ $booking->end_time->diffForHumans(null, true) }} left
+                                </p>
+                                <p class="text-[9px] text-slate-400 font-bold uppercase">
+                                    Ends at {{ $booking->end_time->format('H:i') }}
+                                </p>
+                            @endif
                         </td>
                     </tr>
                     @empty
                     <tr>
                         <td colspan="5" class="px-6 py-20 text-center">
                             <div class="flex flex-col items-center">
-                                <span class="text-4xl mb-4">📂</span>
-                                <p class="text-slate-400 font-bold uppercase text-xs tracking-widest">No Active Bookings Found</p>
+                                <span class="text-4xl mb-4">🛡️</span>
+                                <p class="text-slate-400 font-bold uppercase text-xs tracking-widest">No Active Bookings to Supervise</p>
                             </div>
                         </td>
                     </tr>
@@ -70,10 +91,8 @@
         </div>
     </div>
     
-    <!-- Footer Branding -->
     <p class="text-center text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] pt-4">
         Official Officer Oversight &bull; Muthurwa Market
     </p>
-
 </div>
 @endsection
