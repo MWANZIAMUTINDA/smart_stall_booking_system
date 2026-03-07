@@ -96,9 +96,51 @@
 
                                 <select name="violation_type"
                                         class="form-select form-select-lg border-2 shadow-sm rounded-4 py-3 fw-bold text-dark focus-blue">
-                                    <option value="Waste Management">Waste Management</option>
-                                    <option value="Noise Violation">Noise Violation</option>
-                                    <option value="Late Payment">Late Payment</option>
+
+                                    <option value="Waste Management">
+                                        Waste Management (Improper disposal of waste)
+                                    </option>
+
+                                    <option value="Late Payment">
+                                        Late Payment of Stall Fees
+                                    </option>
+
+                                    <option value="Unauthorized Stall Use">
+                                        Unauthorized Stall Use
+                                    </option>
+
+                                    <option value="Subletting Stall">
+                                        Subletting Stall Without Approval
+                                    </option>
+
+                                    <option value="Obstructing Walkway">
+                                        Obstructing Market Walkway
+                                    </option>
+
+                                    <option value="Encroaching Stall Space">
+                                        Encroaching on Another Trader's Space
+                                    </option>
+
+                                    <option value="Selling Unlicensed Goods">
+                                        Selling Unlicensed or Restricted Goods
+                                    </option>
+
+                                    <option value="Food Hygiene Violation">
+                                        Food Hygiene Violation
+                                    </option>
+
+                                    <option value="Noise Violation">
+                                        Noise Disturbance in Market
+                                    </option>
+
+                                    <option value="Illegal Electricity Connection">
+                                        Illegal Electricity Connection
+                                    </option>
+
+                                    <option value="Damage to Market Property">
+                                        Damage to Market Infrastructure
+                                    </option>
+
                                 </select>
                             </div>
 

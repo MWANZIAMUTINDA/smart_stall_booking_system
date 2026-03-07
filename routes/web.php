@@ -175,6 +175,11 @@ Route::middleware(['auth','officer'])
         Route::post('/violations/{id}/approve',
             [ViolationController::class, 'approve']
         )->name('violations.approve');
+
+        // ✅ Send violation email
+        Route::post('/violations/{id}/send-email',
+            [ViolationController::class, 'sendEmail']
+        )->name('violations.sendEmail');
     });
 
 /*
