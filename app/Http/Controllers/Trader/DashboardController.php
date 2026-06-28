@@ -11,10 +11,13 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // Fetch only available stalls and order properly
-        $stalls = Stall::where('status', 'available')
-                        ->orderBy('stall_number')
-                        ->get();
+        // Fetch all stalls with their current/upcoming active bookings
+        // to compute smart availability on the frontend
+        $stalls = Stall::with(['bookings' => function($q) {
+            $q->where('status', 'confirmed')
+              ->where('end_time', '>', now())
+              ->orderBy('start_time', 'asc');
+        }])->orderBy('stall_number')->get();
 
         return view('trader.dashboard', [
             'stalls' => $stalls

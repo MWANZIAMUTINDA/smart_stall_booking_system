@@ -8,14 +8,18 @@ use App\Models\Stall;
 class StallController extends Controller
 {
     /**
-     * Display a listing of available stalls for traders.
+     * Display a listing of ALL stalls for traders (smart availability).
      */
     public function index()
     {
-        // Get all stalls where status is 'available'
-        $stalls = Stall::where('status', 'available')->get();
+        // Get ALL stalls with bookings for smart availability
+        $stalls = Stall::with(['bookings' => function($q) {
+            $q->whereIn('status', ['confirmed', 'pending'])
+              ->where('end_time', '>', now())
+              ->orderBy('start_time', 'asc');
+        }])->get();
 
-        // Return the view with available stalls
+        // Return the view with all stalls
         return view('trader.stalls.index', compact('stalls'));
     }
 }

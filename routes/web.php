@@ -2,11 +2,12 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\StallController;
 use App\Http\Controllers\Trader\BookingController;
 use App\Http\Controllers\Trader\StallController as TraderStallController;
 use App\Http\Controllers\Trader\DashboardController;
+use App\Http\Controllers\Trader\MpesaController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\StallController as AdminStallController;
 use App\Http\Controllers\Officer\DashboardController as OfficerDashboardController;
 use App\Http\Controllers\Officer\ViolationController;
 
@@ -31,6 +32,15 @@ Route::get('/', function () {
 
     return view('welcome');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Terms & Conditions (Public — No Auth Required)
+|--------------------------------------------------------------------------
+*/
+Route::get('/terms', function () {
+    return view('terms');
+})->name('terms');
 
 /*
 |--------------------------------------------------------------------------
@@ -69,7 +79,7 @@ Route::middleware('auth')->group(function () {
 | Trader Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth')
+Route::middleware(['auth', 'verified'])
     ->prefix('trader')
     ->name('trader.')
     ->group(function () {
@@ -97,6 +107,25 @@ Route::middleware('auth')
 
         Route::post('/feedback', [DashboardController::class, 'storeFeedback'])
             ->name('feedback.store');
+
+        // Payment page
+        Route::get('/bookings/{id}/pay', [BookingController::class, 'pay'])
+            ->name('bookings.pay');
+
+        // Receipt download
+        Route::get('/bookings/{id}/receipt', [BookingController::class, 'receipt'])
+            ->name('bookings.receipt');
+
+        // M-Pesa endpoints
+        Route::post('/mpesa/pay', [MpesaController::class, 'initiatePayment'])
+            ->name('mpesa.pay');
+
+        Route::get('/mpesa/status/{booking}', [MpesaController::class, 'checkStatus'])
+            ->name('mpesa.status');
+
+        // Dev-only: Simulate payment
+        Route::post('/mpesa/simulate', [MpesaController::class, 'simulateSuccess'])
+            ->name('mpesa.simulate');
     });
 
 /*
@@ -118,7 +147,18 @@ Route::middleware(['auth', 'admin'])
         Route::post('/stalls/assign', [AdminDashboardController::class, 'assignStall'])
             ->name('stalls.assign.store');
 
-        Route::resource('stalls', StallController::class);
+        // ── Stall Management (Admin-only, no trader booking) ─────────
+        Route::get('/stalls', [AdminStallController::class, 'index'])
+            ->name('stalls.index');
+
+        Route::post('/stalls/{stall}/block', [AdminStallController::class, 'block'])
+            ->name('stalls.block');
+
+        Route::post('/stalls/{stall}/unblock', [AdminStallController::class, 'unblock'])
+            ->name('stalls.unblock');
+
+        Route::post('/stalls/{stall}/maintenance', [AdminStallController::class, 'markMaintenance'])
+            ->name('stalls.maintenance');
 
         Route::patch('/traders/{user}/restrict', [AdminDashboardController::class, 'updateRestriction'])
             ->name('traders.restrict');
@@ -134,6 +174,10 @@ Route::middleware(['auth', 'admin'])
 
         Route::patch('/feedback/{id}/resolve', [AdminDashboardController::class, 'resolveFeedback'])
             ->name('feedback.resolve');
+
+        // Admin manually prompts a trader to pay
+        Route::post('/bookings/{booking}/prompt-payment', [AdminDashboardController::class, 'promptPayment'])
+            ->name('bookings.prompt');
     });
 
 /*
@@ -180,7 +224,37 @@ Route::middleware(['auth','officer'])
         Route::post('/violations/{id}/send-email',
             [ViolationController::class, 'sendEmail']
         )->name('violations.sendEmail');
+
+        // ✅ Download PDF
+        Route::get('/violations/{id}/pdf',
+            [ViolationController::class, 'downloadPdf']
+        )->name('violations.pdf');
+
+        // ✅ Regenerate letter via Gemini AI (AJAX)
+        Route::post('/violations/{id}/regenerate',
+            [ViolationController::class, 'regenerateLetter']
+        )->name('violations.regenerate');
+
+        // ✅ Standalone printable letter view
+        Route::get('/violations/{id}/letter',
+            [ViolationController::class, 'showLetter']
+        )->name('violations.letter');
     });
+
+/*
+|--------------------------------------------------------------------------
+| M-Pesa Callback (Public - No Auth)
+|--------------------------------------------------------------------------
+*/
+Route::post('/mpesa/callback', [MpesaController::class, 'callback'])
+    ->name('mpesa.callback');
+
+/*
+|--------------------------------------------------------------------------
+| Chat Assistant API
+|--------------------------------------------------------------------------
+*/
+Route::post('/chat', [\App\Http\Controllers\ChatController::class, 'handleChat'])->name('chat.handle');
 
 /*
 |--------------------------------------------------------------------------

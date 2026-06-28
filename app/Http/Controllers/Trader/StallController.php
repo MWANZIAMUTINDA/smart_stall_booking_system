@@ -26,8 +26,13 @@ class StallController extends Controller
                 ->update(['status' => 'expired']);
         }
 
-        // 2. Now fetch the genuinely available stalls
-        $stalls = Stall::where('status', 'available')->get();
+        // 2. ✅ SHOW ALL STALLS — Never hide a stall from the system.
+        // Eager-load ALL active/future bookings (confirmed + pending) for smart availability.
+        $stalls = Stall::with(['bookings' => function($q) {
+                $q->whereIn('status', ['confirmed', 'pending'])
+                  ->where('end_time', '>', now())
+                  ->orderBy('start_time', 'asc');
+            }])->get();
 
         return view('trader.stalls.index', compact('stalls'));
     }

@@ -10,6 +10,9 @@ class Violation extends Model
     protected $fillable = [
         'trader_id',
         'officer_id',
+        'case_id',
+        'photo_path',
+        'signature_path',
         'violation_type',
         'officer_notes',
         'ai_raw_message',
@@ -25,5 +28,10 @@ class Violation extends Model
     public function officer()
     {
         return $this->belongsTo(User::class, 'officer_id');
+    }
+
+    public function logs()
+    {
+        return $this->hasMany(ViolationLog::class);
     }
 }

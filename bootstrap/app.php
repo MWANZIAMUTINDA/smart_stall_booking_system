@@ -24,6 +24,11 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\RestrictionMiddleware::class,
         ]);
 
+        // Exclude M-Pesa callback from CSRF verification
+        $middleware->validateCsrfTokens(except: [
+            'mpesa/callback',
+        ]);
+
         /*
         |--------------------------------------------------------------------------
         | ALIASES

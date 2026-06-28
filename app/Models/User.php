@@ -5,9 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\Feedback; // Added import
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory, Notifiable;
 
@@ -59,5 +60,28 @@ class User extends Authenticatable
     public function isBanned(): bool
     {
         return $this->account_restriction === 'banned';
+    }
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
+    }
+
+    /**
+     * Check if the user already has a confirmed or pending booking during this slot.
+     * Prevents a trader from booking multiple stalls for the same time.
+     */
+    public function isBusyDuring($start, $end): bool
+    {
+        $startTime = \Carbon\Carbon::parse($start);
+        $endTime = \Carbon\Carbon::parse($end);
+
+        return $this->bookings()
+            ->whereIn('status', ['confirmed', 'pending'])
+            ->where('end_time', '>', now())
+            ->where(function ($query) use ($startTime, $endTime) {
+                $query->where('start_time', '<', $endTime)
+                      ->where('end_time', '>', $startTime);
+            })
+            ->exists();
     }
 }
